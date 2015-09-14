@@ -1,0 +1,13 @@
+These patches apply on top of XenServer 7.0 sources:
+
+  https://github.com/xenserver/xen-4.6
+  https://github.com/xenserver/xen-4.6.pg
+
+Please see the xen source documentation on how to build it and apply
+patches on top of the source tree.
+
+Quick HOWTO:
+  1. clone the xen-4.6 repository to /some/path/xen-4.6/
+  2. apply the specific XenServer 7.0 (see xen-4.6.pg/INSTALL)
+  3. clone xen-4.6-hvi patch queue repository to /some/path/xen-4.6/.git/patches/
+  4. cd /some/path/xen-4.6 and then do a `guilt push -a` to apply the patches

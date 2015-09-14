@@ -1,0 +1,2 @@
+0001-x86-hvm-fix-non-onchangeonly-CR-write-events-logic.patch
+0002-x86-clean-up-vm_event-related-code-in-asm-x86-domain.patch

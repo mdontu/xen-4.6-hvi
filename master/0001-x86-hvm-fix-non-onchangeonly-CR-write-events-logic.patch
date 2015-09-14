@@ -1,0 +1,54 @@
+From 0154804da379d59e7ba4aae3188459e5e5fede2b Mon Sep 17 00:00:00 2001
+From: Razvan Cojocaru <rcojocaru@bitdefender.com>
+Date: Thu, 13 Aug 2015 14:46:25 +0200
+Subject: [PATCH 1/2] x86/hvm: fix non-onchangeonly CR write events logic
+
+hvm_event_crX() already returns a bool_t to tell us whether an
+event will be sent out or not, so the extra check that value != old
+is not only useless, but also prevents non-onchangeonly events from
+being sent.
+
+Signed-off-by: Razvan Cojocaru <rcojocaru@bitdefender.com>
+Reviewed-by: Andrew Cooper <andrew.cooper3@citrix.com>
+Release-acked-by: Wei Liu <wei.liu2@citrix.com>
+---
+ xen/arch/x86/hvm/hvm.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/xen/arch/x86/hvm/hvm.c b/xen/arch/x86/hvm/hvm.c
+index c4b7e79..e956077 100644
+--- a/xen/arch/x86/hvm/hvm.c
++++ b/xen/arch/x86/hvm/hvm.c
+@@ -3382,8 +3382,7 @@ int hvm_set_cr0(unsigned long value, bool_t may_defer)
+     }
+ 
+     if ( may_defer && unlikely(currad->monitor.write_ctrlreg_enabled &
+-                               monitor_ctrlreg_bitmask(VM_EVENT_X86_CR0)) &&
+-         value != old_value )
++                               monitor_ctrlreg_bitmask(VM_EVENT_X86_CR0)) )
+     {
+         ASSERT(currad->event_write_data != NULL);
+ 
+@@ -3486,8 +3485,7 @@ int hvm_set_cr3(unsigned long value, bool_t may_defer)
+     struct arch_domain *currad = &v->domain->arch;
+ 
+     if ( may_defer && unlikely(currad->monitor.write_ctrlreg_enabled &
+-                               monitor_ctrlreg_bitmask(VM_EVENT_X86_CR3)) &&
+-         value != old )
++                               monitor_ctrlreg_bitmask(VM_EVENT_X86_CR3)) )
+     {
+         ASSERT(currad->event_write_data != NULL);
+ 
+@@ -3560,8 +3558,7 @@ int hvm_set_cr4(unsigned long value, bool_t may_defer)
+     }
+ 
+     if ( may_defer && unlikely(currad->monitor.write_ctrlreg_enabled &
+-                               monitor_ctrlreg_bitmask(VM_EVENT_X86_CR4)) &&
+-         value != old_cr )
++                               monitor_ctrlreg_bitmask(VM_EVENT_X86_CR4)) )
+     {
+         ASSERT(currad->event_write_data != NULL);
+ 
+-- 
+2.5.2
+
