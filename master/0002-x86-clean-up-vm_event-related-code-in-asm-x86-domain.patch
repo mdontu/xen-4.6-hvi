@@ -1,7 +1,7 @@
-From f900b191f839d5c06f929301cfda3de2deac5d5b Mon Sep 17 00:00:00 2001
+From 5d9e030e819203604b6744e8e10f175dfa5b5d1f Mon Sep 17 00:00:00 2001
 From: Razvan Cojocaru <rcojocaru@bitdefender.com>
 Date: Wed, 9 Sep 2015 16:27:24 +0200
-Subject: [PATCH 2/2] x86: clean up vm_event-related code in asm-x86/domain.h
+Subject: [PATCH 2/6] x86: clean up vm_event-related code in asm-x86/domain.h
 
 As suggested by Jan Beulich, moved struct monitor_write_data from
 struct arch_domain to struct arch_vcpu, as well as moving all

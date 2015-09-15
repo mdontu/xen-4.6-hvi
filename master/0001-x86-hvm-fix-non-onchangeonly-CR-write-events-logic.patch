@@ -1,7 +1,7 @@
-From 0154804da379d59e7ba4aae3188459e5e5fede2b Mon Sep 17 00:00:00 2001
+From 5036d2c86554167095fec2ab52819fdd1cde9612 Mon Sep 17 00:00:00 2001
 From: Razvan Cojocaru <rcojocaru@bitdefender.com>
 Date: Thu, 13 Aug 2015 14:46:25 +0200
-Subject: [PATCH 1/2] x86/hvm: fix non-onchangeonly CR write events logic
+Subject: [PATCH 1/6] x86/hvm: fix non-onchangeonly CR write events logic
 
 hvm_event_crX() already returns a bool_t to tell us whether an
 event will be sent out or not, so the extra check that value != old
