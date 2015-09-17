@@ -1,6 +1,6 @@
-From 260167d4304138e19258053d0284aa13a66add24 Mon Sep 17 00:00:00 2001
+From a641a74d0ad6ceea3cd10ad36f9cdebc47d99c61 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Mihai=20Don=C8=9Bu?= <mdontu@bitdefender.com>
-Date: Tue, 15 Sep 2015 11:24:41 +0300
+Date: Thu, 17 Sep 2015 20:33:36 +0300
 Subject: [PATCH 6/6] xen: Generic instruction re-execution mechanism for
  execute faults
 MIME-Version: 1.0
@@ -20,8 +20,8 @@ must be re-executed this way (instructions that lie in non-executable
 pages and instructions that cause the setting of Accessed and/or Dirty
 flags inside page tables are two examples).
 
-Additionally, we have changed MAX_ALTP2M from 10 to 8, because the
-sizeo fo arch_domain got bigger than PAGE_SIZE and broke the build
+Additionally, we have changed MAX_NESTEDP2M from 10 to 8, because the
+sizeo of arch_domain got bigger than PAGE_SIZE and broke the build
 in alloc_domain_struct().
 
 Signed-off-by: Andrei Lutas <vlutas@bitdefender.com>
@@ -30,9 +30,9 @@ Signed-off-by: Mihai Donțu <mdontu@bitdefender.com>
  xen/arch/x86/hvm/vmx/vmx.c    |  68 +++++++++++++
  xen/arch/x86/mm/p2m.c         | 218 +++++++++++++++++++++++++++++++++++++++++-
  xen/common/domain.c           |   2 +
- xen/include/asm-x86/domain.h  |  22 ++++-
+ xen/include/asm-x86/domain.h  |  24 ++++-
  xen/include/asm-x86/hvm/hvm.h |   2 +
- 5 files changed, 309 insertions(+), 3 deletions(-)
+ 5 files changed, 310 insertions(+), 4 deletions(-)
 
 diff --git a/xen/arch/x86/hvm/vmx/vmx.c b/xen/arch/x86/hvm/vmx/vmx.c
 index 76f39fb..a5a7f16 100644
@@ -418,18 +418,27 @@ index e511dc9..bd869d4 100644
  
      if ( (err = xsm_alloc_security_domain(d)) != 0 )
 diff --git a/xen/include/asm-x86/domain.h b/xen/include/asm-x86/domain.h
-index 8a840e3..9e8826b 100644
+index 8a840e3..8aff6f7 100644
 --- a/xen/include/asm-x86/domain.h
 +++ b/xen/include/asm-x86/domain.h
-@@ -234,7 +234,7 @@ typedef xen_domctl_cpuid_t cpuid_input_t;
+@@ -232,7 +232,7 @@ struct paging_vcpu {
+ #define MAX_CPUID_INPUT 40
+ typedef xen_domctl_cpuid_t cpuid_input_t;
  
- #define MAX_NESTEDP2M 10
+-#define MAX_NESTEDP2M 10
++#define MAX_NESTEDP2M 8
  
--#define MAX_ALTP2M      10 /* arbitrary */
-+#define MAX_ALTP2M      8 /* arbitrary */
+ #define MAX_ALTP2M      10 /* arbitrary */
  #define INVALID_ALTP2M  0xffff
- #define MAX_EPTP        (PAGE_SIZE / sizeof(uint64_t))
- struct p2m_domain;
+@@ -291,7 +291,7 @@ struct arch_domain
+ 
+     struct paging_domain paging;
+     struct p2m_domain *p2m;
+-    /* To enforce lock ordering in the pod code wrt the 
++    /* To enforce lock ordering in the pod code wrt the
+      * page_alloc lock */
+     int page_alloc_unlock_level;
+ 
 @@ -385,6 +385,8 @@ struct arch_domain
  
      /* Mem_access emulation control */
