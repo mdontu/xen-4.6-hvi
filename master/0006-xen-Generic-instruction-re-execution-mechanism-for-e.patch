@@ -375,7 +375,7 @@ index 0b64581..565842b 100644
          }
      }
  
-+    if ( vm_event_check_ring(d->vm_event->monitor.ring_page) &&
++    if ( vm_event_check_ring(d->vm_event->monitor) &&
 +         hvm_funcs.exited_by_nested_pagefault &&
 +         !hvm_funcs.exited_by_nested_pagefault() ) /* don't send a mem_event */
 +    {
