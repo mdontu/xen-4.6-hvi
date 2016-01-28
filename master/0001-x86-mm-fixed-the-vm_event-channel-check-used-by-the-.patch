@@ -1,0 +1,35 @@
+From 9b5b84287c45d0c2c49e7bbf5645ff29f5abfe78 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Mihai=20Don=C8=9Bu?= <mdontu@bitdefender.com>
+Date: Thu, 28 Jan 2016 01:35:56 +0200
+Subject: [PATCH] x86/mm: fixed the vm_event channel check used by the
+ instruction re-execution code
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+While porting the instruction re-execution code to xen-4.6, where the
+old mem_event subsystem was transformed into vm_event, I added a wrong
+test for determining if the vm_event channel is active or not. This
+resulted in random Windows crashes (BSOD-s).
+
+Signed-off-by: Mihai Donțu <mdontu@bitdefender.com>
+---
+ xen/arch/x86/mm/p2m.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/xen/arch/x86/mm/p2m.c b/xen/arch/x86/mm/p2m.c
+index 9a906bf..6da6f66 100644
+--- a/xen/arch/x86/mm/p2m.c
++++ b/xen/arch/x86/mm/p2m.c
+@@ -1905,7 +1905,7 @@ bool_t p2m_mem_access_check(paddr_t gpa, unsigned long gla,
+     }
+ 
+     if ( opt_introspection_extn &&
+-         vm_event_check_ring(d->vm_event->monitor.ring_page) &&
++         vm_event_check_ring(&d->vm_event->monitor) &&
+          hvm_funcs.exited_by_nested_pagefault &&
+          !hvm_funcs.exited_by_nested_pagefault() ) /* don't send a mem_event */
+     {
+-- 
+2.7.0
+

@@ -1,6 +1,1 @@
-0001-x86-hvm-fix-non-onchangeonly-CR-write-events-logic.patch
-0002-x86-clean-up-vm_event-related-code-in-asm-x86-domain.patch
-0003-xen-Introduce-VM_EVENT_FLAG_SET_EIP.patch
-0004-xen-libxc-Introduced-XEN_DOMCTL_emulate_each_rep.patch
-0005-xen-Support-for-VMCALL-mem_events.patch
-0006-xen-Generic-instruction-re-execution-mechanism-for-e.patch
+0001-x86-mm-fixed-the-vm_event-channel-check-used-by-the-.patch
