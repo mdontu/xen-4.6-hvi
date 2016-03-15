@@ -1,1 +1,2 @@
 0001-x86-mm-fixed-the-vm_event-channel-check-used-by-the-.patch
+0002-x86-hvm-Allow-guest_request-vm_events-coming-from-us.patch

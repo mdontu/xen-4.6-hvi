@@ -1,0 +1,36 @@
+From 3e3cbe0e14772e4ac87b35e4dd04fbcadae3f290 Mon Sep 17 00:00:00 2001
+From: Razvan Cojocaru <rcojocaru@bitdefender.com>
+Date: Wed, 24 Feb 2016 18:13:13 +0200
+Subject: [PATCH 2/3] x86/hvm: Allow guest_request vm_events coming from
+ userspace
+
+If the introspection extension has been enabled, allow guest
+userspace code to request that a vm_event be sent out via VMCALL.
+
+Signed-off-by: Razvan Cojocaru <rcojocaru@bitdefender.com>
+---
+ xen/arch/x86/hvm/hvm.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/xen/arch/x86/hvm/hvm.c b/xen/arch/x86/hvm/hvm.c
+index 4004bcb..f190cbb 100644
+--- a/xen/arch/x86/hvm/hvm.c
++++ b/xen/arch/x86/hvm/hvm.c
+@@ -5198,8 +5198,14 @@ int hvm_do_hypercall(struct cpu_user_regs *regs)
+     switch ( mode )
+     {
+     case 8:        
++        if ( opt_introspection_extn && eax == __HYPERVISOR_hvm_op &&
++             regs->rdi == HVMOP_guest_request_vm_event )
++            break;
+     case 4:
+     case 2:
++        if ( opt_introspection_extn && eax == __HYPERVISOR_hvm_op &&
++             regs->ebx == HVMOP_guest_request_vm_event )
++            break;
+         hvm_get_segment_register(curr, x86_seg_ss, &sreg);
+         if ( unlikely(sreg.attr.fields.dpl) )
+         {
+-- 
+2.7.3
+

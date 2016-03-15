@@ -1,35 +1,70 @@
-From 9b5b84287c45d0c2c49e7bbf5645ff29f5abfe78 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Mihai=20Don=C8=9Bu?= <mdontu@bitdefender.com>
-Date: Thu, 28 Jan 2016 01:35:56 +0200
-Subject: [PATCH] x86/mm: fixed the vm_event channel check used by the
- instruction re-execution code
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+From 9ee77f8b79ca1e449690b637467c3eda141c5ebb Mon Sep 17 00:00:00 2001
+From: Razvan Cojocaru <rcojocaru@bitdefender.com>
+Date: Mon, 7 Mar 2016 17:09:13 +0200
+Subject: [PATCH 1/3] xen: Make sure interrupts don't interfere with the
+ re-execution mechanism
 
-While porting the instruction re-execution code to xen-4.6, where the
-old mem_event subsystem was transformed into vm_event, I added a wrong
-test for determining if the vm_event channel is active or not. This
-resulted in random Windows crashes (BSOD-s).
+vmx_intr_assist() returns early if v->arch.hvm_vcpu.single_step, but
+doesn't if v->arch.hvm_vmx.exec_control has already set
+CPU_BASED_MONITOR_TRAP_FLAG and v->arch.hvm_vcpu.single_step == 0,
+which messes with the re-execution mechanism. This patch sets
+(and restores) v->arch.hvm_vcpu.single_step instead of just MTF.
 
-Signed-off-by: Mihai Donțu <mdontu@bitdefender.com>
+Signed-off-by: Razvan Cojocaru <rcojocaru@bitdefender.com>
 ---
- xen/arch/x86/mm/p2m.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ xen/arch/x86/hvm/vmx/vmx.c   | 1 +
+ xen/arch/x86/mm/p2m.c        | 6 ++----
+ xen/include/asm-x86/domain.h | 1 +
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/xen/arch/x86/mm/p2m.c b/xen/arch/x86/mm/p2m.c
-index 9a906bf..6da6f66 100644
---- a/xen/arch/x86/mm/p2m.c
-+++ b/xen/arch/x86/mm/p2m.c
-@@ -1905,7 +1905,7 @@ bool_t p2m_mem_access_check(paddr_t gpa, unsigned long gla,
+diff --git a/xen/arch/x86/hvm/vmx/vmx.c b/xen/arch/x86/hvm/vmx/vmx.c
+index de26f43..18cfe77 100644
+--- a/xen/arch/x86/hvm/vmx/vmx.c
++++ b/xen/arch/x86/hvm/vmx/vmx.c
+@@ -2936,6 +2936,7 @@ static int vmx_stop_reexecute_instruction(struct vcpu *v)
+         }
+ 
+         v->arch.rexec_context[i].gpa = 0;
++        v->arch.hvm_vcpu.single_step = v->arch.rexec_context[i].old_single_step;
      }
  
-     if ( opt_introspection_extn &&
--         vm_event_check_ring(d->vm_event->monitor.ring_page) &&
-+         vm_event_check_ring(&d->vm_event->monitor) &&
-          hvm_funcs.exited_by_nested_pagefault &&
-          !hvm_funcs.exited_by_nested_pagefault() ) /* don't send a mem_event */
-     {
+     spin_lock(&v->domain->arch.rexec_lock);
+diff --git a/xen/arch/x86/mm/p2m.c b/xen/arch/x86/mm/p2m.c
+index aa683d0..7c683fb 100644
+--- a/xen/arch/x86/mm/p2m.c
++++ b/xen/arch/x86/mm/p2m.c
+@@ -1775,6 +1775,7 @@ release_and_exit:
+ 
+     v->arch.rexec_context[level].gpa = gpa;
+     v->arch.rexec_context[level].old_access = old_access;
++    v->arch.rexec_context[level].old_single_step = v->arch.hvm_vcpu.single_step;
+ 
+     /* Step 5: Make the GPA with the required access, so we can re-execute
+      * the instruction. */
+@@ -1822,10 +1823,7 @@ release_and_exit:
+      * VM-exit to be generated after the instruction has been
+      * successfully re-executed. */
+     if ( 0 == level )
+-    {
+-        v->arch.hvm_vmx.exec_control |= CPU_BASED_MONITOR_TRAP_FLAG;
+-        vmx_update_cpu_exec_control(v);
+-    }
++        v->arch.hvm_vcpu.single_step = 1;
+ 
+     /* Step 8: We should be done! */
+ 
+diff --git a/xen/include/asm-x86/domain.h b/xen/include/asm-x86/domain.h
+index f183595..0c75724 100644
+--- a/xen/include/asm-x86/domain.h
++++ b/xen/include/asm-x86/domain.h
+@@ -570,6 +570,7 @@ struct arch_vcpu
+         unsigned long gpa;
+         xenmem_access_t old_access;
+         xenmem_access_t cur_access;
++        bool_t old_single_step;
+     } rexec_context[REEXECUTION_MAX_DEPTH];
+ 
+     int rexec_level;
 -- 
-2.7.0
+2.7.3
 
